@@ -33,6 +33,7 @@ defmodule TreetopTreeHouseTest do
            ]
 
     assert number_of_visible_points(grid) == 21
+    assert viewing_distance(grid) == 8
   end
 
   test "puzzle solution" do
@@ -41,9 +42,46 @@ defmodule TreetopTreeHouseTest do
     grid = parse_grid(raw_grid)
 
     assert number_of_visible_points(grid) == 1798
+    assert viewing_distance(grid) == 259_308
   end
 
-  def number_of_visible_points(grid), do: grid.coordinates |> Enum.filter(&visible_tree?(&1, grid.rows, grid.columns)) |> Enum.count()
+  def viewing_distance(grid),
+    do:
+      grid.coordinates
+      |> Enum.map(&viewing_distance(&1, grid.rows, grid.columns))
+      |> Enum.max()
+
+  def viewing_distance({0, _}, _, _), do: 0
+  def viewing_distance({_, 0}, _, _), do: 0
+
+  def viewing_distance({column_index, _}, _, columns) when column_index == length(columns) - 1,
+    do: 0
+
+  def viewing_distance({_, row_index}, rows, _) when row_index == length(rows) - 1, do: 0
+
+  def viewing_distance({column_index, row_index}, rows, columns) do
+    row = Enum.at(rows, row_index)
+    column = Enum.at(columns, column_index)
+    value = Enum.at(row, column_index)
+
+    [
+      Enum.slice(row, 0..(column_index - 1)) |> Enum.reverse(),
+      Enum.slice(row, (column_index + 1)..-1),
+      Enum.slice(column, 0..(row_index - 1)) |> Enum.reverse(),
+      Enum.slice(column, (row_index + 1)..-1)
+    ]
+    |> Enum.map(&distance(&1, value))
+    |> Enum.reduce(&Kernel.*/2)
+  end
+
+  def distance(trees, value, d \\ 0)
+  def distance([], _, d), do: d
+  def distance([tree | _], value, d) when tree >= value, do: d + 1
+  def distance([_ | rest], value, d), do: distance(rest, value, d + 1)
+
+  def number_of_visible_points(grid),
+    do:
+      grid.coordinates |> Enum.filter(&visible_tree?(&1, grid.rows, grid.columns)) |> Enum.count()
 
   def visible_tree?({0, _}, _, _), do: true
 
