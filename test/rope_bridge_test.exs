@@ -2,7 +2,7 @@ defmodule RopeBridgeTest do
   use ExUnit.Case
 
   defmodule Rope do
-    defstruct head: {0, 0}, tail: {0, 0}
+    defstruct knots: [{0, 0}, {0, 0}]
   end
 
   test "solve puzzles" do
@@ -26,7 +26,7 @@ defmodule RopeBridgeTest do
     assert execute_moves(moves) |> Enum.count() == 13
   end
 
-  def execute_moves(moves), do: execute_moves(moves, %Rope{}, MapSet.new([{0, 0}]))
+  def execute_moves(moves, rope \\ %Rope{}), do: execute_moves(moves, rope, MapSet.new([{0, 0}]))
 
   def execute_moves([], _, visited_tail_positions), do: visited_tail_positions
 
@@ -38,32 +38,40 @@ defmodule RopeBridgeTest do
   test "execute move" do
     rope = %Rope{}
     {rope, _} = execute_move("R 4", rope)
-    assert rope == %Rope{head: {4, 0}, tail: {3, 0}}
+    assert rope == %Rope{knots: [{4, 0}, {3, 0}]}
     {rope, _} = execute_move("U 4", rope)
-    assert rope == %Rope{head: {4, 4}, tail: {4, 3}}
+    assert rope == %Rope{knots: [{4, 4}, {4, 3}]}
     {rope, _} = execute_move("L 3", rope)
-    assert rope == %Rope{head: {1, 4}, tail: {2, 4}}
+    assert rope == %Rope{knots: [{1, 4}, {2, 4}]}
     {rope, _} = execute_move("D 1", rope)
-    assert rope == %Rope{head: {1, 3}, tail: {2, 4}}
+    assert rope == %Rope{knots: [{1, 3}, {2, 4}]}
     {rope, _} = execute_move("R 4", rope)
-    assert rope == %Rope{head: {5, 3}, tail: {4, 3}}
+    assert rope == %Rope{knots: [{5, 3}, {4, 3}]}
     {rope, _} = execute_move("D 1", rope)
-    assert rope == %Rope{head: {5, 2}, tail: {4, 3}}
+    assert rope == %Rope{knots: [{5, 2}, {4, 3}]}
     {rope, _} = execute_move("L 5", rope)
-    assert rope == %Rope{head: {0, 2}, tail: {1, 2}}
+    assert rope == %Rope{knots: [{0, 2}, {1, 2}]}
     {rope, _} = execute_move("R 2", rope)
-    assert rope == %Rope{head: {2, 2}, tail: {1, 2}}
+    assert rope == %Rope{knots: [{2, 2}, {1, 2}]}
   end
 
   def execute_move(move, rope) do
     [direction, steps] = String.split(move, " ")
 
     1..String.to_integer(steps)
-    |> Enum.reduce({rope, MapSet.new()}, fn _, {%Rope{head: head, tail: tail}, visited} ->
+    |> Enum.reduce({rope, MapSet.new()}, fn _, {%Rope{knots: knots}, visited} ->
+      [head | others] = knots
       head = move(direction, head)
-      tail = follow_head(head, tail)
-      {%Rope{head: head, tail: tail}, MapSet.put(visited, tail)}
+      knots = follow(others, [head])
+      {%Rope{knots: knots}, MapSet.put(visited, List.last(knots))}
     end)
+  end
+
+  def follow([], moved_knots), do: moved_knots |> Enum.reverse()
+
+  def follow([tail | rem], [head | _] = moved_knots) do
+    tail = follow_head(head, tail)
+    follow(rem, [tail | moved_knots])
   end
 
   test "move" do
