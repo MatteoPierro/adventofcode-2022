@@ -5,10 +5,16 @@ defmodule RopeBridgeTest do
     defstruct knots: [{0, 0}, {0, 0}]
   end
 
+  def new_rope(number_of_knots \\ 2) do
+    knots = for _ <- 1..number_of_knots, do: {0, 0}
+    rope = %Rope{knots: knots}
+  end
+
   test "solve puzzles" do
     moves = FileReader.read_all_lines("input_day9.txt")
 
-    assert execute_moves(moves) |> Enum.count() == 6522
+    assert count_tails_positions(moves) == 6522
+    assert count_tails_positions(moves, new_rope(10)) == 2717
   end
 
   test "execute moves" do
@@ -23,10 +29,26 @@ defmodule RopeBridgeTest do
       "R 2"
     ]
 
-    assert execute_moves(moves) |> Enum.count() == 13
+    assert count_tails_positions(moves) == 13
+
+    assert count_tails_positions(moves, new_rope(10)) == 1
+
+    moves = [
+      "R 5",
+      "U 8",
+      "L 8",
+      "D 3",
+      "R 17",
+      "D 10",
+      "L 25",
+      "U 20"
+    ]
+    assert count_tails_positions(moves, new_rope(10)) == 36
   end
 
-  def execute_moves(moves, rope \\ %Rope{}), do: execute_moves(moves, rope, MapSet.new([{0, 0}]))
+  def count_tails_positions(moves, rope \\ %Rope{}), do: execute_moves(moves, rope) |> Enum.count()
+
+  def execute_moves(moves, rope), do: execute_moves(moves, rope, MapSet.new([{0, 0}]))
 
   def execute_moves([], _, visited_tail_positions), do: visited_tail_positions
 
@@ -35,24 +57,66 @@ defmodule RopeBridgeTest do
     execute_moves(remaning_moves, rope, MapSet.union(visited_tail_positions, visited))
   end
 
-  test "execute move" do
-    rope = %Rope{}
-    {rope, _} = execute_move("R 4", rope)
-    assert rope == %Rope{knots: [{4, 0}, {3, 0}]}
-    {rope, _} = execute_move("U 4", rope)
-    assert rope == %Rope{knots: [{4, 4}, {4, 3}]}
-    {rope, _} = execute_move("L 3", rope)
-    assert rope == %Rope{knots: [{1, 4}, {2, 4}]}
-    {rope, _} = execute_move("D 1", rope)
-    assert rope == %Rope{knots: [{1, 3}, {2, 4}]}
-    {rope, _} = execute_move("R 4", rope)
-    assert rope == %Rope{knots: [{5, 3}, {4, 3}]}
-    {rope, _} = execute_move("D 1", rope)
-    assert rope == %Rope{knots: [{5, 2}, {4, 3}]}
-    {rope, _} = execute_move("L 5", rope)
-    assert rope == %Rope{knots: [{0, 2}, {1, 2}]}
-    {rope, _} = execute_move("R 2", rope)
-    assert rope == %Rope{knots: [{2, 2}, {1, 2}]}
+  describe "execute move" do
+    test "rope with two knots" do
+      rope = %Rope{}
+      {rope, _} = execute_move("R 4", rope)
+      assert rope == %Rope{knots: [{4, 0}, {3, 0}]}
+      {rope, _} = execute_move("U 4", rope)
+      assert rope == %Rope{knots: [{4, 4}, {4, 3}]}
+      {rope, _} = execute_move("L 3", rope)
+      assert rope == %Rope{knots: [{1, 4}, {2, 4}]}
+      {rope, _} = execute_move("D 1", rope)
+      assert rope == %Rope{knots: [{1, 3}, {2, 4}]}
+      {rope, _} = execute_move("R 4", rope)
+      assert rope == %Rope{knots: [{5, 3}, {4, 3}]}
+      {rope, _} = execute_move("D 1", rope)
+      assert rope == %Rope{knots: [{5, 2}, {4, 3}]}
+      {rope, _} = execute_move("L 5", rope)
+      assert rope == %Rope{knots: [{0, 2}, {1, 2}]}
+      {rope, _} = execute_move("R 2", rope)
+      assert rope == %Rope{knots: [{2, 2}, {1, 2}]}
+    end
+
+    test "rope with 10 knots" do
+      rope = new_rope(10)
+      {rope, _} = execute_move("R 4", rope)
+      assert rope.knots == [{4, 0}, {3, 0}, {2, 0}, {1, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("U 4", rope)
+      assert rope.knots == [{4, 4}, {4, 3}, {4, 2}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("L 3", rope)
+      assert rope.knots == [{1, 4}, {2, 4}, {3, 3}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("D 1", rope)
+      assert rope.knots == [{1, 3}, {2, 4}, {3, 3}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("R 4", rope)
+      assert rope.knots == [{5, 3}, {4, 3}, {3, 3}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("D 1", rope)
+      assert rope.knots == [{5, 2}, {4, 3}, {3, 3}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("L 5", rope)
+      assert rope.knots == [{0, 2}, {1, 2}, {2, 2}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("R 2", rope)
+      assert rope.knots == [{2, 2}, {1, 2}, {2, 2}, {3, 2}, {2, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+    end
+
+    test "second example of a rope with 10 knots" do
+      rope = new_rope(10)
+      {rope, _} = execute_move("R 5", rope)
+      assert rope.knots == [{5, 0}, {4, 0}, {3, 0}, {2, 0}, {1, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}]
+      {rope, _} = execute_move("U 8", rope)
+      assert rope.knots == [{5, 8}, {5, 7}, {5, 6}, {5, 5}, {5, 4}, {4, 4}, {3, 3}, {2, 2}, {1, 1}, {0, 0}]
+      {rope, _} = execute_move("L 8", rope)
+      assert rope.knots == [{-3, 8}, {-2, 8}, {-1, 8}, {0, 8}, {1, 8}, {1, 7}, {1, 6}, {1, 5}, {1, 4}, {1, 3}]
+      {rope, _} = execute_move("D 3", rope)
+      assert rope.knots == [{-3, 5}, {-3, 6}, {-2, 7}, {-1, 7}, {0, 7}, {1, 7}, {1, 6}, {1, 5}, {1, 4}, {1, 3}]
+      {rope, _} = execute_move("R 17", rope)
+      assert rope.knots == [{14, 5}, {13, 5}, {12, 5}, {11, 5}, {10, 5}, {9, 5}, {8, 5}, {7, 5}, {6, 5}, {5, 5}]
+      {rope, _} = execute_move("D 10", rope)
+      assert rope.knots == [{14, -5}, {14, -4}, {14, -3}, {14, -2}, {14, -1}, {14, 0}, {13, 0}, {12, 0}, {11, 0}, {10, 0}]
+      {rope, _} = execute_move("L 25", rope)
+      assert rope.knots == [{-11, -5}, {-10, -5}, {-9, -5}, {-8, -5}, {-7, -5}, {-6, -5}, {-5, -5}, {-4, -5}, {-3, -5}, {-2, -5}]
+      {rope, _} = execute_move("U 20", rope)
+      assert rope.knots == [{-11, 15}, {-11, 14}, {-11, 13}, {-11, 12}, {-11, 11}, {-11, 10}, {-11, 9}, {-11, 8}, {-11, 7}, {-11, 6}]
+    end
   end
 
   def execute_move(move, rope) do
@@ -118,23 +182,21 @@ defmodule RopeBridgeTest do
     end
   end
 
-  def follow_head(same_position, same_position), do: same_position
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx + 1 and hy == ty + 1, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx + 1 and hy == ty - 1, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx + 1 and hy == ty, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx and hy == ty - 1, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx and hy == ty + 1, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx - 1 and hy == ty + 1, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx - 1 and hy == ty, do: tail
-  def follow_head({hx, hy}, {tx, ty} = tail) when hx == tx - 1 and hy == ty - 1, do: tail
+  def follow_head({hx, hy}, {tx, hy}) when hx != tx do
+    x = if hx > tx, do: hx - 1, else: hx + 1
+    {x, hy}
+  end
 
-  def follow_head({hx, hy}, {tx, ty}) when hx == tx + 2 and hy == ty, do: {tx + 1, ty}
-  def follow_head({hx, hy}, {tx, ty}) when hx == tx - 2 and hy == ty, do: {tx - 1, ty}
-  def follow_head({hx, hy}, {tx, ty}) when hx == tx and hy == ty + 2, do: {tx, ty + 1}
-  def follow_head({hx, hy}, {tx, ty}) when hx == tx and hy == ty - 2, do: {tx, ty - 1}
+  def follow_head({hx, hy}, {hx, ty}) when hy != ty do
+    y = if hy > ty, do: hy - 1, else: hy + 1
+    {hx, y}
+  end
 
-  def follow_head({hx, hy}, {tx, ty}) when hx < tx and hy < ty, do: {tx - 1, ty - 1}
-  def follow_head({hx, hy}, {tx, ty}) when hx > tx and hy < ty, do: {tx + 1, ty - 1}
-  def follow_head({hx, hy}, {tx, ty}) when hx < tx and hy > ty, do: {tx - 1, ty + 1}
-  def follow_head({hx, hy}, {tx, ty}) when hx > tx and hy > ty, do: {tx + 1, ty + 1}
+  def follow_head({hx, hy}, {tx, ty}) when abs(hy - ty) > 1 or abs(hx - tx) > 1 do
+    x = if hx > tx, do: tx + 1, else: tx - 1
+    y = if hy > ty, do: ty + 1, else: ty - 1
+    {x, y}
+  end
+
+  def follow_head(_, tail), do: tail
 end
