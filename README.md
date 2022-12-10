@@ -11,3 +11,4 @@
 - [No Space Left On Device](./test/no_space_left_on_device_test.exs)
 - [Treetop Tree House](./test/treetop_tree_house_test.exs)
 - [Rope Bridge](./test/rope_bridge_test.exs)
+- [Cathode-Ray Tube](./test/cathode_ray_tube_test.exs)
