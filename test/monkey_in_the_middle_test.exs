@@ -2,7 +2,7 @@ defmodule MonkeyintheMiddleTest do
   use ExUnit.Case
 
   defmodule Monkey do
-    defstruct [:items, :operation, :find_destination, :inspected_items]
+    defstruct [:items, :operation, :find_destination, :divisor, :inspected_items]
   end
 
   test "parse monkeys" do
@@ -19,7 +19,7 @@ defmodule MonkeyintheMiddleTest do
   test "inspect_monkey_items" do
     monkeys = FileReader.read_all_lines("input_day11_test.txt") |> parse_monkeys()
 
-    monkeys = inspect_monkey_items(Enum.at(monkeys, 0), 0, monkeys, & div(&1, 3))
+    monkeys = inspect_monkey_items(Enum.at(monkeys, 0), 0, monkeys, &div(&1, 3))
 
     assert Enum.at(monkeys, 0).items == []
     assert Enum.at(monkeys, 3).items == [74, 500, 620]
@@ -54,10 +54,15 @@ defmodule MonkeyintheMiddleTest do
     assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 98280
   end
 
-  def monkeys_round(monkeys, worry_reducer \\ & div(&1, 3)) do
+  def monkeys_round(monkeys, worry_reducer \\ &div(&1, 3)) do
     0..(Enum.count(monkeys) - 1)
     |> Enum.reduce(monkeys, fn monkey_index, current_monkeys ->
-      inspect_monkey_items(Enum.at(current_monkeys, monkey_index), monkey_index, current_monkeys, worry_reducer)
+      inspect_monkey_items(
+        Enum.at(current_monkeys, monkey_index),
+        monkey_index,
+        current_monkeys,
+        worry_reducer
+      )
     end)
   end
 
@@ -107,16 +112,13 @@ defmodule MonkeyintheMiddleTest do
       items: items,
       operation: operation,
       find_destination: find_destination,
+      divisor: parse_divisor(raw_monkey),
       inspected_items: 0
     }
   end
 
   def parse_find_destination(raw_monkey) do
-    divisible_number =
-      Enum.at(raw_monkey, 3)
-      |> String.split(" by ")
-      |> Enum.at(1)
-      |> String.to_integer()
+    divisible_number = parse_divisor(raw_monkey)
 
     positive_destination =
       Enum.at(raw_monkey, 4)
@@ -136,6 +138,14 @@ defmodule MonkeyintheMiddleTest do
         else: nagative_destination
     end
   end
+
+  def parse_divisor(raw_monkey),
+    do:
+      divisible_number =
+        Enum.at(raw_monkey, 3)
+        |> String.split(" by ")
+        |> Enum.at(1)
+        |> String.to_integer()
 
   def parse_operation("new = old * old"), do: fn old -> old * old end
 
