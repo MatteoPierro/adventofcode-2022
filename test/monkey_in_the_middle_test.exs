@@ -44,14 +44,40 @@ defmodule MonkeyintheMiddleTest do
     assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 10605
   end
 
-  test "puzzle solution" do
-    monkeys = FileReader.read_all_lines("input_day11.txt") |> parse_monkeys()
+  test "monkey round very worried" do
+    monkeys = FileReader.read_all_lines("input_day11_test.txt") |> parse_monkeys()
 
     monkeys =
-      1..20 |> Enum.reduce(monkeys, fn _, current_monkeys -> monkeys_round(current_monkeys) end)
+      1..10000 |> Enum.reduce(monkeys, fn _, current_monkeys -> monkeys_round_very_worried(current_monkeys) end)
+
+    inspected_items = Enum.map(monkeys, & &1.inspected_items)
+
+    assert inspected_items == [52166, 47830, 1938, 52013] # 10000
+
+    sorted_inspected_items = inspected_items |> Enum.sort()
+    assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 2713310158
+  end
+
+  test "puzzle solution" do
+    initial_monkeys = FileReader.read_all_lines("input_day11.txt") |> parse_monkeys()
+
+    monkeys =
+      1..20 |> Enum.reduce(initial_monkeys, fn _, current_monkeys -> monkeys_round(current_monkeys) end)
 
     sorted_inspected_items = Enum.map(monkeys, & &1.inspected_items) |> Enum.sort()
     assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 98280
+
+    monkeys =
+      1..10000 |> Enum.reduce(initial_monkeys, fn _, current_monkeys -> monkeys_round_very_worried(current_monkeys) end)
+
+    sorted_inspected_items = Enum.map(monkeys, & &1.inspected_items) |> Enum.sort()
+    assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 17673687232
+  end
+
+  def monkeys_round_very_worried(monkeys) do
+    common_divisor = Enum.map(monkeys, & &1.divisor) |> Enum.reduce(& Kernel.*/2)
+
+    monkeys_round(monkeys, & rem(&1, common_divisor))
   end
 
   def monkeys_round(monkeys, worry_reducer \\ &div(&1, 3)) do
@@ -70,16 +96,16 @@ defmodule MonkeyintheMiddleTest do
 
   def inspect_monkey_items(monkey, monkey_index, monkeys, worry_reducer) do
     [first_item | rest] = monkey.items
-    worrey_level = monkey.operation.(first_item) |> worry_reducer.()
+    worry_level = monkey.operation.(first_item) |> worry_reducer.()
     updated_monkey = %{monkey | items: rest, inspected_items: monkey.inspected_items + 1}
-    destination_monkey_index = monkey.find_destination.(worrey_level)
+    destination_monkey_index = monkey.find_destination.(worry_level)
     destination_monkey = Enum.at(monkeys, destination_monkey_index)
 
     updated_monkeys =
       List.replace_at(monkeys, monkey_index, updated_monkey)
       |> List.replace_at(destination_monkey_index, %{
         destination_monkey
-        | items: destination_monkey.items ++ [worrey_level]
+        | items: destination_monkey.items ++ [worry_level]
       })
 
     inspect_monkey_items(updated_monkey, monkey_index, updated_monkeys, worry_reducer)
