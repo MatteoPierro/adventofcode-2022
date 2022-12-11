@@ -19,7 +19,7 @@ defmodule MonkeyintheMiddleTest do
   test "inspect_monkey_items" do
     monkeys = FileReader.read_all_lines("input_day11_test.txt") |> parse_monkeys()
 
-    monkeys = inspect_monkey_items(Enum.at(monkeys, 0), 0, monkeys)
+    monkeys = inspect_monkey_items(Enum.at(monkeys, 0), 0, monkeys, & div(&1, 3))
 
     assert Enum.at(monkeys, 0).items == []
     assert Enum.at(monkeys, 3).items == [74, 500, 620]
@@ -54,18 +54,18 @@ defmodule MonkeyintheMiddleTest do
     assert Enum.at(sorted_inspected_items, -1) * Enum.at(sorted_inspected_items, -2) == 98280
   end
 
-  def monkeys_round(monkeys) do
+  def monkeys_round(monkeys, worry_reducer \\ & div(&1, 3)) do
     0..(Enum.count(monkeys) - 1)
     |> Enum.reduce(monkeys, fn monkey_index, current_monkeys ->
-      inspect_monkey_items(Enum.at(current_monkeys, monkey_index), monkey_index, current_monkeys)
+      inspect_monkey_items(Enum.at(current_monkeys, monkey_index), monkey_index, current_monkeys, worry_reducer)
     end)
   end
 
-  def inspect_monkey_items(monkey, _, monkeys) when monkey.items == [], do: monkeys
+  def inspect_monkey_items(monkey, _, monkeys, _) when monkey.items == [], do: monkeys
 
-  def inspect_monkey_items(monkey, monkey_index, monkeys) do
+  def inspect_monkey_items(monkey, monkey_index, monkeys, worry_reducer) do
     [first_item | rest] = monkey.items
-    worrey_level = monkey.operation.(first_item) |> div(3)
+    worrey_level = monkey.operation.(first_item) |> worry_reducer.()
     updated_monkey = %{monkey | items: rest, inspected_items: monkey.inspected_items + 1}
     destination_monkey_index = monkey.find_destination.(worrey_level)
     destination_monkey = Enum.at(monkeys, destination_monkey_index)
@@ -77,7 +77,7 @@ defmodule MonkeyintheMiddleTest do
         | items: destination_monkey.items ++ [worrey_level]
       })
 
-    inspect_monkey_items(updated_monkey, monkey_index, updated_monkeys)
+    inspect_monkey_items(updated_monkey, monkey_index, updated_monkeys, worry_reducer)
   end
 
   def parse_monkeys(lines) do
