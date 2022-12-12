@@ -95,7 +95,7 @@ defmodule HillClimbingAlgorithmTest do
   def find_shortest_path(map),
     do:
       find_shortest_path(
-        [[map.start]],
+        [[map.target]],
         map,
         MapSet.new()
       )
@@ -106,8 +106,8 @@ defmodule HillClimbingAlgorithmTest do
     [last | _] = current_path
 
     cond do
-      last == map.target ->
-        current_path |> Enum.reverse()
+      last == map.start ->
+        current_path
 
       MapSet.member?(seen, last) ->
         find_shortest_path(other_paths, map, seen)
@@ -127,7 +127,7 @@ defmodule HillClimbingAlgorithmTest do
       |> Enum.filter(fn candidate ->
         last_value = value_at(map, last)
         candidate_value = value_at(map, candidate)
-        valid_step?(last_value, candidate_value)
+        valid_step?(candidate_value, last_value)
       end)
       |> Enum.reduce([], fn neighbour, paths_to_visit ->
         [[neighbour | current_path] | paths_to_visit]
