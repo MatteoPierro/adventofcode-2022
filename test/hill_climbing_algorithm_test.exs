@@ -81,42 +81,52 @@ defmodule HillClimbingAlgorithmTest do
 
     path = find_shortest_path(map)
     assert Enum.count(path) - 1 == 31
+
+    optimal_path = find_optimal_path(map)
+    assert Enum.count(optimal_path) - 1 == 29
   end
 
   test "puzzle solution" do
     map = FileReader.read_all_lines("input_day12.txt") |> parse_map()
 
-    assert map.start == {0, 20}
-    assert map.target == {138, 20}
     path = find_shortest_path(map)
     assert Enum.count(path) - 1 == 440
+
+    optimal_path = find_optimal_path(map)
+    assert Enum.count(optimal_path) - 1 == 439
   end
 
-  def find_shortest_path(map),
-    do:
-      find_shortest_path(
-        [[map.target]],
-        map,
-        MapSet.new()
-      )
+  def find_optimal_path(map), do: find_shortest_path(map, &(value_at(map, &1) == "a"))
 
-  def find_shortest_path([], _, _), do: raise("FOUND NOTHING!")
+  def find_shortest_path(map, exit_condition \\ nil) do
+    exit_condition = exit_condition || (&(&1 == map.start))
 
-  def find_shortest_path([current_path | other_paths], map, seen) do
+    find_shortest_path(
+      [[map.target]],
+      map,
+      MapSet.new(),
+      exit_condition
+    )
+  end
+
+  def find_shortest_path([], _, _, _), do: raise("FOUND NOTHING!")
+
+  def find_shortest_path([current_path | other_paths], map, seen, exit_condition) do
     [last | _] = current_path
 
     cond do
-      last == map.start ->
+      exit_condition.(last) ->
         current_path
 
       MapSet.member?(seen, last) ->
-        find_shortest_path(other_paths, map, seen)
+        find_shortest_path(other_paths, map, seen, exit_condition)
 
       true ->
         find_shortest_path(
           other_paths ++ paths_to_visit(map, current_path),
           map,
-          MapSet.put(seen, last)
+          MapSet.put(seen, last),
+          exit_condition
         )
     end
   end

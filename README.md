@@ -13,3 +13,4 @@
 - [Rope Bridge](./test/rope_bridge_test.exs)
 - [Cathode-Ray Tube](./test/cathode_ray_tube_test.exs)
 - [Monkey in the Middle](./test/monkey_in_the_middle_test.exs)
+- [Hill Climbing Algorithm](./test/hill_climbing_algorithm_test.exs)
