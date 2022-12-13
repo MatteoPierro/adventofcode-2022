@@ -32,12 +32,13 @@ defmodule DistressSignalTest do
            ]
   end
 
-  test "find pairs in right order" do
+  test "test example" do
     raw_packets_pairs = FileReader.read_all_lines("input_day13_test.txt")
 
     packets_pairs = parse_packets_pairs(raw_packets_pairs)
 
     assert sum_of_indices_of_pairs_in_right_order(packets_pairs) == 13
+    assert decoder_key(packets_pairs) == 140
   end
 
   test "puzzle solution" do
@@ -46,7 +47,28 @@ defmodule DistressSignalTest do
     packets_pairs = parse_packets_pairs(raw_packets_pairs)
 
     assert sum_of_indices_of_pairs_in_right_order(packets_pairs) == 5605
+    assert decoder_key(packets_pairs) == 24969
   end
+
+  def decoder_key(packets_pairs) do
+    sorted_packets =
+      all_packets(packets_pairs)
+      |> Enum.sort(fn first, second ->
+        case order_validation(first, second) do
+          :valid -> true
+          :invalid -> false
+        end
+      end)
+
+    two_position = Enum.find_index(sorted_packets, &(&1 == [[2]])) + 1
+    six_position = Enum.find_index(sorted_packets, &(&1 == [[6]])) + 1
+    two_position * six_position
+  end
+
+  def all_packets(packets_pairs),
+    do:
+      Enum.reduce(packets_pairs, &Kernel.++/2) ++
+        [[[6]], [[2]]]
 
   def sum_of_indices_of_pairs_in_right_order(packets_pairs),
     do:
