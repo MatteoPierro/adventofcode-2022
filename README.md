@@ -15,3 +15,4 @@
 - [Monkey in the Middle](./test/monkey_in_the_middle_test.exs)
 - [Hill Climbing Algorithm](./test/hill_climbing_algorithm_test.exs)
 - [Distress Signal](./test/distress_signal_test.exs)
+- [Regolith Reservoir](./test/regolith_reservoir_test.exs)

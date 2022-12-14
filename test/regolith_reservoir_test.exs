@@ -1,11 +1,14 @@
 defmodule RegolithReservoirTest do
   use ExUnit.Case
 
+  @initial_position [500, 0]
+  @relative_neighbours [[0, 1], [-1, 1], [1, 1]]
+
   defmodule Map do
     defstruct [:occupied_points, :max_y]
   end
 
-  test "parse lines" do
+  test "test example" do
     raw_lines = [
       "498,4 -> 498,6 -> 496,6",
       "503,4 -> 502,4 -> 502,9 -> 494,9"
@@ -16,6 +19,7 @@ defmodule RegolithReservoirTest do
     assert map.occupied_points |> Enum.count() == 20
     assert map.max_y == 9
     assert pour_sand(map) == 24
+    assert pour_sand(map, &finite_end_evaluator/2) == 93
   end
 
   test "puzzle solution" do
@@ -24,26 +28,44 @@ defmodule RegolithReservoirTest do
     map = parse_map(raw_lines)
 
     assert pour_sand(map) == 1016
+    assert pour_sand(map, &finite_end_evaluator/2) == 25402
   end
 
-  def pour_sand(map, sand_counter \\ 0), do: pour_sand(map, sand_counter, [500, 0])
+  def pour_sand(map, end_evaluator \\ &inifinite_end_evaluator/2, sand_counter \\ 0),
+    do: pour_sand(map, end_evaluator, sand_counter, @initial_position)
 
-  def pour_sand(%Map{occupied_points: occupied_points, max_y: max_y}=map, sand_counter, [x, y] = sand) do
-    next_position =
-      [[0, 1], [-1, 1], [1, 1]]
-      |> Enum.map(fn [dx, dy] -> [x + dx, y + dy] end)
-      |> Enum.find(&(not MapSet.member?(occupied_points, &1)))
+  def pour_sand(map, end_evaluator, sand_counter, sand) do
+    next_position = find_next_position(map, sand)
 
     cond do
-      next_position == nil ->
-        pour_sand(%{map | occupied_points: MapSet.put(occupied_points, sand)}, sand_counter + 1)
+      end_evaluator.(map, next_position) ->
+        sand_counter
 
-      List.last(next_position) > max_y -> sand_counter
+      next_position == nil ->
+        pour_sand(
+          %{map | occupied_points: MapSet.put(map.occupied_points, sand)},
+          end_evaluator,
+          sand_counter + 1
+        )
 
       true ->
-        pour_sand(map, sand_counter, next_position)
+        pour_sand(map, end_evaluator, sand_counter, next_position)
     end
   end
+
+  def inifinite_end_evaluator(_, nil), do: false
+  def inifinite_end_evaluator(map, next_position), do: List.last(next_position) > map.max_y
+
+  def finite_end_evaluator(map, nil), do: MapSet.member?(map.occupied_points, @initial_position)
+  def finite_end_evaluator(_, _), do: false
+
+  def find_next_position(map, [x, y]),
+    do:
+      @relative_neighbours
+      |> Enum.map(fn [dx, dy] -> [x + dx, y + dy] end)
+      |> Enum.find(fn [_, py] = p ->
+        not MapSet.member?(map.occupied_points, p) and py != map.max_y + 2
+      end)
 
   def parse_map(raw_lines) do
     occupied_points =
