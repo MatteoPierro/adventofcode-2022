@@ -16,3 +16,4 @@
 - [Hill Climbing Algorithm](./test/hill_climbing_algorithm_test.exs)
 - [Distress Signal](./test/distress_signal_test.exs)
 - [Regolith Reservoir](./test/regolith_reservoir_test.exs)
+- [Beacon Exclusion Zone](./test/beacon_exclusion_zone_test.exs)
