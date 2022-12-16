@@ -43,7 +43,10 @@ defmodule ProboscideaVolcaniumTest do
 
     {neighbors, flow_rates} = parse_scan(raw_scan)
 
-    assert pressure(neighbors, flow_rates) == {["CC", "EE", "HH", "JJ", "BB", "DD"], 1651}
+    assert pressure(neighbors, flow_rates) |> max_pressure() ==
+             {["CC", "EE", "HH", "JJ", "BB", "DD"], 1651}
+
+    assert max_pressure_with_elephant(neighbors, flow_rates) == 1707
   end
 
   test "puzzle solution" do
@@ -51,17 +54,45 @@ defmodule ProboscideaVolcaniumTest do
       FileReader.read_all_lines("input_day16.txt")
       |> parse_scan()
 
-    {_, total} = pressure(neighbors, flow_rates)
+    {_, pressure} = pressure(neighbors, flow_rates) |> max_pressure()
+    assert pressure == 2056
 
-    assert total == 2056
+    assert max_pressure_with_elephant(neighbors, flow_rates) == 2513
   end
 
-  def pressure(neighbors, flow_rates) do
+  def max_pressure_with_elephant(neighbors, flow_rates) do
+    pressure(neighbors, flow_rates, 26)
+    # remove the full paths
+    |> Enum.filter(fn {path, pressure} ->
+      Enum.count(path) < Enum.count(Map.keys(flow_rates))
+    end)
+    # find the max for each combination of valves ["BB", "CC"] is the same as ["CC","BB"]
+    |> Enum.reduce(%{}, fn {path, pressure}, acc ->
+      path_sorted = Enum.sort(path)
+      current = Map.get(acc, path_sorted, 0)
+      updated_pressure = max(current, pressure)
+      Map.put(acc, path_sorted, updated_pressure)
+    end)
+    # make all the possible combination of the paths
+    |> Comb.combinations(2)
+    # filter paths having same valves
+    |> Enum.reject(fn [{path1, _}, {path2, _}] ->
+      path1 |> Enum.any?(&(&1 in path2))
+    end)
+    # sum the pressures
+    |> Enum.map(fn [{_, pressure1}, {_, pressure2}] ->
+      pressure1 + pressure2
+    end)
+    # find the max
+    |> Enum.max()
+  end
+
+  def pressure(neighbors, flow_rates, minutes \\ 30) do
     sp = calculate_shortest_paths(neighbors, flow_rates)
-    pressure("AA", neighbors, flow_rates, Map.keys(flow_rates), sp, [], 0, 30)
+    pressure("AA", neighbors, flow_rates, Map.keys(flow_rates), sp, [], 0, minutes)
   end
 
-  def pressure(_, _, _, [], _, opened, total_pressure, _), do: {opened, total_pressure}
+  def pressure(_, _, _, [], _, opened, total_pressure, _), do: [{opened, total_pressure}]
 
   def pressure(
         current_valve,
@@ -82,23 +113,28 @@ defmodule ProboscideaVolcaniumTest do
 
       cond do
         remaning_minutes <= 0 ->
-          {opened, total_pressure}
+          [{opened, total_pressure}]
 
         true ->
-          pressure(
-            v,
-            neighbors,
-            flow_rates,
-            remaning_valves,
-            shortest_paths,
-            [v | opened],
-            total_pressure + rate * remaning_minutes,
-            remaning_minutes
-          )
+          [
+            {[v | opened], total_pressure + rate * remaning_minutes},
+            pressure(
+              v,
+              neighbors,
+              flow_rates,
+              remaning_valves,
+              shortest_paths,
+              [v | opened],
+              total_pressure + rate * remaning_minutes,
+              remaning_minutes
+            )
+          ]
       end
     end)
-    |> Enum.max(fn {_, t1}, {_, t2} -> t1 > t2 end)
+    |> List.flatten()
   end
+
+  def max_pressure(s), do: s |> Enum.max(fn {_, t1}, {_, t2} -> t1 > t2 end)
 
   def calculate_shortest_paths(neighbors, flow_rates) do
     valves_to_open = Map.keys(flow_rates)

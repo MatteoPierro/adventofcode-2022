@@ -1,3 +1,4 @@
 %{
+  "comb": {:git, "https://github.com/tallakt/comb.git", "e6660924891d88d798494ab0c5adeefb29fae8b8", [tag: "master"]},
   "priority_queue": {:hex, :priority_queue, "1.0.0", "5ff5f83a764b635e71f0e41bf78b9763bb233bbac8f5733b4b09b6730bddf866", [:mix], [], "hexpm", "ba3dc420a5898d863803455c05ad870c6b6f3adb12b50ebea6cd6aeed1b358b7"},
 }
