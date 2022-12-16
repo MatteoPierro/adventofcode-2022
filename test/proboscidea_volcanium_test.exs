@@ -36,126 +36,92 @@ defmodule ProboscideaVolcaniumTest do
              "HH" => 22,
              "JJ" => 21
            }
+  end
 
-    assert paths_to_visit(neighbors, ["AA"]) == [["DD", "AA"], ["II", "AA"], ["BB", "AA"]]
-    assert find_shortest_path("AA", "II", neighbors) == ["II", "AA"]
-    current_valve = "AA"
-    valve_to_open = Map.keys(flow_rates)
+  test "solve example" do
+    raw_scan = FileReader.read_all_lines("input_day16_test.txt")
 
-    paths_to_valve_to_open =
-      Enum.map(valve_to_open, &find_shortest_path(current_valve, &1, neighbors))
+    {neighbors, flow_rates} = parse_scan(raw_scan)
 
-    assert paths_to_valve_to_open == [
-             ["BB", "AA"],
-             ["CC", "DD", "AA"],
-             ["DD", "AA"],
-             ["EE", "DD", "AA"],
-             ["HH", "GG", "FF", "EE", "DD", "AA"],
-             ["JJ", "II", "AA"]
-           ]
+    assert pressure(neighbors, flow_rates) == {["CC", "EE", "HH", "JJ", "BB", "DD"], 1651}
+  end
 
-    valves_to_open = Map.keys(flow_rates)
+  test "puzzle solution" do
+    {neighbors, flow_rates} =
+      FileReader.read_all_lines("input_day16.txt")
+      |> parse_scan()
 
-    shortest_paths =
-      valves_to_open
-      |> Enum.reduce(%{}, fn v, total ->
-        reach =
-          List.delete(valves_to_open, v)
-          |> Enum.reduce(%{}, fn o, acc ->
-            Map.put(acc, o, find_shortest_path(v, o, neighbors))
-          end)
+    {_, total} = pressure(neighbors, flow_rates)
 
-        Map.put(total, v, reach)
-      end)
-
-    # assert shortest_paths["DD"]["BB"] == []
-
-    assert pressure(neighbors, flow_rates) == 1651
+    assert total == 2056
   end
 
   def pressure(neighbors, flow_rates) do
-    valves_to_open = Map.keys(flow_rates)
-
-    shortest_paths_from_aa =
-      valves_to_open
-      |> Enum.reduce(%{}, fn v, total ->
-          Map.put(total, v, find_shortest_path("AA", v, neighbors))
-      end)
-
-    shortest_paths =
-      valves_to_open
-      |> Enum.reduce(%{}, fn v, total ->
-        reach =
-          List.delete(valves_to_open, v)
-          |> Enum.reduce(%{}, fn o, acc ->
-            Map.put(acc, o, find_shortest_path(v, o, neighbors))
-          end)
-
-        Map.put(total, v, reach)
-      end)
-
-    sp = Map.put(shortest_paths, "AA", shortest_paths_from_aa)
-    pressure("AA", neighbors, flow_rates, Map.keys(flow_rates), sp, 0, 30)
+    sp = calculate_shortest_paths(neighbors, flow_rates)
+    pressure("AA", neighbors, flow_rates, Map.keys(flow_rates), sp, [], 0, 30)
   end
 
-  def pressure(_, _, _, _, _, _, minute) when minute < 0, do: -1
-  def pressure(_, _, _, _, _, total_pressure, 0), do: total_pressure
+  def pressure(_, _, _, [], _, opened, total_pressure, _), do: {opened, total_pressure}
 
-  def pressure(_, _, _, [], _, total_pressure, _), do: total_pressure
-
-  def pressure(current_valve, neighbors, flow_rates, valves_to_open, shortest_paths, total_pressure, minute) do
+  def pressure(
+        current_valve,
+        neighbors,
+        flow_rates,
+        valves_to_open,
+        shortest_paths,
+        opened,
+        total_pressure,
+        minute
+      ) do
     valves_to_open
     |> Enum.map(fn v ->
       path = Map.get(shortest_paths, current_valve) |> Map.get(v)
       remaning_valves = List.delete(valves_to_open, v)
       rate = Map.get(flow_rates, v)
       remaning_minutes = minute - Enum.count(path)
-      # IO.puts("")
-      # IO.puts("START!!!")
-      # IO.inspect(current_valve)
-      # IO.inspect(v)
-      # IO.inspect(rate)
-      # IO.inspect(remaning_minutes)
-      # IO.inspect(rate * remaning_minutes)
-      # IO.puts("END!!!")
-      pressure(
-        v,
-        neighbors,
-        flow_rates,
-        remaning_valves,
-        shortest_paths,
-        total_pressure + rate * remaning_minutes,
-        remaning_minutes
-      )
+
+      cond do
+        remaning_minutes <= 0 ->
+          {opened, total_pressure}
+
+        true ->
+          pressure(
+            v,
+            neighbors,
+            flow_rates,
+            remaning_valves,
+            shortest_paths,
+            [v | opened],
+            total_pressure + rate * remaning_minutes,
+            remaning_minutes
+          )
+      end
     end)
-    |> Enum.max()
+    |> Enum.max(fn {_, t1}, {_, t2} -> t1 > t2 end)
   end
 
-  test "puzzle solution" do
-    raw_scan = FileReader.read_all_lines("input_day16.txt")
+  def calculate_shortest_paths(neighbors, flow_rates) do
+    valves_to_open = Map.keys(flow_rates)
 
-    {neighbors, flow_rates} = parse_scan(raw_scan)
+    shortest_paths_from_aa =
+      valves_to_open
+      |> Enum.reduce(%{}, fn v, total ->
+        Map.put(total, v, find_shortest_path("AA", v, neighbors))
+      end)
 
-    assert flow_rates == %{
-             "CP" => 24,
-             "DD" => 8,
-             "EU" => 19,
-             "IR" => 9,
-             "KH" => 13,
-             "LL" => 5,
-             "LY" => 21,
-             "NJ" => 6,
-             "OC" => 18,
-             "PC" => 22,
-             "QD" => 14,
-             "SS" => 17,
-             "UC" => 25,
-             "VH" => 10,
-             "WL" => 12
-           }
+    shortest_paths =
+      valves_to_open
+      |> Enum.reduce(%{}, fn v, total ->
+        reach =
+          List.delete(valves_to_open, v)
+          |> Enum.reduce(%{}, fn o, acc ->
+            Map.put(acc, o, find_shortest_path(v, o, neighbors))
+          end)
 
-    # 2035 too low
-    assert pressure(neighbors, flow_rates) == 1651
+        Map.put(total, v, reach)
+      end)
+
+    Map.put(shortest_paths, "AA", shortest_paths_from_aa)
   end
 
   def find_shortest_path([], _, _, _), do: raise("FOUND NOTHING!")
