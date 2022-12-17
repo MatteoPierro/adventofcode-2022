@@ -71,11 +71,38 @@ defmodule PyroclasticFlowTest do
     {occupied, heights_when_consumend} = evolution(n_rocks, move_sequence)
 
     differences = heights_when_consumend
-              # |> Enum.chunk_every(2, 1, :discard)
-              # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
-              # |> Enum.reverse()
-    assert differences == []
+    # assert differences == []
+    # |> Enum.chunk_every(2, 1, :discard)
+    # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
+    # |> Enum.reverse()
+    chunked = chunk_increasing(differences |> Enum.reverse(), [], [])
+    first = Enum.at(chunked, 2)
+    assert chunked |> Enum.map(& List.last(&1)) |> Enum.map(fn {a,b,c} -> {n_rocks - a, b ,c} end) == []
     assert calculate_max_y(occupied) == 3068
+  end
+
+  test "chunk increasing" do
+    assert chunk_increasing([{0, 0, 0}, {0, 0, 1}, {0, 0, 0}], [], []) == [
+             [{0, 0, 1}, {0, 0, 0}],
+             [{0, 0, 0}]
+           ]
+  end
+
+  def chunk_increasing([], current_chunk, chunks) do
+    [current_chunk | chunks] |> Enum.reverse()
+  end
+
+  def chunk_increasing([t2 | rest], [], chunks) do
+    chunk_increasing(rest, [t2], chunks)
+  end
+
+  def chunk_increasing([{_, _, v1} = t1 | rest], [{_, _, v2} | _] = current_chunk, chunks)
+      when v2 < v1 do
+    chunk_increasing(rest, [t1 | current_chunk], chunks)
+  end
+
+  def chunk_increasing(values, current_chunk, chunks) do
+    chunk_increasing(values, [], [current_chunk | chunks])
   end
 
   test "puzzle solution" do
@@ -86,13 +113,17 @@ defmodule PyroclasticFlowTest do
 
     {occupied, heights_when_consumend} = evolution(n_rocks, move_sequence)
 
-    differences = heights_when_consumend
-              # |> Enum.chunk_every(2, 1, :discard)
-              # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
-              # |> Enum.reverse()
-    assert differences == []
+    # print_rocks(occupied)
 
-    assert calculate_max_y(occupied) == 3197
+    # assert calculate_max_y(occupied) == 3197
+
+    differences = heights_when_consumend
+    #           # |> Enum.chunk_every(2, 1, :discard)
+    #           # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
+    #           # |> Enum.reverse()
+    chunked = chunk_increasing(differences |> Enum.reverse(), [], [])
+    assert chunked |> Enum.reverse() |> Enum.map(& Enum.slice(&1, -3..-1)) == []
+    assert differences == [{1740, 2762}, {1715, 2690}, {1715, 2690}]
   end
 
   def print_rocks(rocks) do
@@ -152,19 +183,16 @@ defmodule PyroclasticFlowTest do
     shape_position_moved_horizontally = move_horizzontally(move, current_shape_position, occupied)
     shape_position = shape_position_moved_horizontally |> move_down(occupied)
 
-    new_heights_when_consumend =
-      if current_move_index == 0 do
-        current_max = calculate_max_y(occupied)
-        new_floor = Enum.filter(occupied, fn [x, y] -> y == current_max end)
-        [{n_rocks, current_max, new_floor} | heights_when_consumend]
-      else
-        heights_when_consumend
-      end
-
     if shape_position == shape_position_moved_horizontally do
       new_occupied = MapSet.union(occupied, MapSet.new(shape_position_moved_horizontally))
       new_max_y = calculate_max_y(new_occupied)
       next_shape = next_shape(current_shape, new_max_y)
+
+      current_max = calculate_max_y(new_occupied)
+      # new_floor = Enum.filter(new_occupied, fn [x, y] -> y == current_max end)
+      new_heights_when_consumend = [
+        {n_rocks - 1, current_max, current_move_index} | heights_when_consumend
+      ]
 
       evolution(
         n_rocks - 1,
@@ -181,7 +209,7 @@ defmodule PyroclasticFlowTest do
         next_move_index,
         {current_shape, shape_position},
         occupied,
-        new_heights_when_consumend
+        heights_when_consumend
       )
     end
   end
