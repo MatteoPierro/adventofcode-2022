@@ -68,16 +68,29 @@ defmodule PyroclasticFlowTest do
     n_rocks = 2022
     move_sequence = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>" |> String.graphemes()
 
-    occupied = evolution(n_rocks, move_sequence)
+    {occupied, heights_when_consumend} = evolution(n_rocks, move_sequence)
 
+    differences = heights_when_consumend
+              # |> Enum.chunk_every(2, 1, :discard)
+              # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
+              # |> Enum.reverse()
+    assert differences == []
     assert calculate_max_y(occupied) == 3068
   end
 
   test "puzzle solution" do
-    move_sequence = FileReader.read_all_lines("input_day17.txt") |> List.first() |> String.graphemes()
-    n_rocks = 2022
+    move_sequence =
+      FileReader.read_all_lines("input_day17.txt") |> List.first() |> String.graphemes()
 
-    occupied = evolution(n_rocks, move_sequence)
+    n_rocks = 6022
+
+    {occupied, heights_when_consumend} = evolution(n_rocks, move_sequence)
+
+    differences = heights_when_consumend
+              # |> Enum.chunk_every(2, 1, :discard)
+              # |> Enum.map(fn [{r1, h1}, {r2, h2}] -> {r2 - r1, h1 - h2} end)
+              # |> Enum.reverse()
+    assert differences == []
 
     assert calculate_max_y(occupied) == 3197
   end
@@ -85,15 +98,16 @@ defmodule PyroclasticFlowTest do
   def print_rocks(rocks) do
     IO.puts("")
     max_y = calculate_max_y(rocks)
+
     max_y..0
-    |> Enum.map(& print_line(&1, rocks))
+    |> Enum.map(&print_line(&1, rocks))
     |> Enum.join("\n")
     |> IO.puts()
   end
 
   def print_line(line_index, rocks) do
     0..8
-    |> Enum.map(& print_block([&1, line_index], rocks))
+    |> Enum.map(&print_block([&1, line_index], rocks))
     |> Enum.join()
   end
 
@@ -102,6 +116,7 @@ defmodule PyroclasticFlowTest do
   def print_block([_, 0], _), do: "_"
   def print_block([0, _], _), do: "|"
   def print_block([8, _], _), do: "|"
+
   def print_block(block, rocks) do
     if MapSet.member?(rocks, block) do
       "#"
@@ -111,39 +126,53 @@ defmodule PyroclasticFlowTest do
   end
 
   def evolution(n_rocks, move_sequence) do
-    evolution(n_rocks, move_sequence, 0, {:horizontal, horizontal(0)}, MapSet.new())
+    evolution(n_rocks, move_sequence, 0, {:horizontal, horizontal(0)}, MapSet.new(), [])
   end
 
   def evolution(
-    0,
-    _,
-    _,
-    _,
-    occupied
-  ), do: occupied
+        0,
+        _,
+        _,
+        _,
+        occupied,
+        heights_when_consumend
+      ),
+      do: {occupied, heights_when_consumend}
 
   def evolution(
         n_rocks,
         move_sequence,
         current_move_index,
         {current_shape, current_shape_position},
-        occupied
+        occupied,
+        heights_when_consumend
       ) do
     next_move_index = calculate_next_move_index(move_sequence, current_move_index)
     move = Enum.at(move_sequence, current_move_index)
     shape_position_moved_horizontally = move_horizzontally(move, current_shape_position, occupied)
     shape_position = shape_position_moved_horizontally |> move_down(occupied)
 
+    new_heights_when_consumend =
+      if current_move_index == 0 do
+        current_max = calculate_max_y(occupied)
+        new_floor = Enum.filter(occupied, fn [x, y] -> y == current_max end)
+        [{n_rocks, current_max, new_floor} | heights_when_consumend]
+      else
+        heights_when_consumend
+      end
+
     if shape_position == shape_position_moved_horizontally do
       new_occupied = MapSet.union(occupied, MapSet.new(shape_position_moved_horizontally))
       new_max_y = calculate_max_y(new_occupied)
       next_shape = next_shape(current_shape, new_max_y)
+
       evolution(
         n_rocks - 1,
         move_sequence,
         next_move_index,
         next_shape,
-        new_occupied
+        new_occupied,
+        new_heights_when_consumend
       )
     else
       evolution(
@@ -151,7 +180,8 @@ defmodule PyroclasticFlowTest do
         move_sequence,
         next_move_index,
         {current_shape, shape_position},
-        occupied
+        occupied,
+        new_heights_when_consumend
       )
     end
   end
