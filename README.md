@@ -18,6 +18,7 @@
 - [Regolith Reservoir](./test/regolith_reservoir_test.exs)
 - [Beacon Exclusion Zone](./test/beacon_exclusion_zone_test.exs)
 - [Proboscidea Volcanium](./test/proboscidea_volcanium_test.exs)
-- [Pyroclastic Flow](./test/pyroclastic_flow_test.exs) (Only part 1)
+- [Pyroclastic Flow](./test/pyroclastic_flow_test.exs)
+  - part 2 solved manually
 - [Boiling Boulders](./test/boiling_boulders_test.exs)
 - [Not Enough Minerals](./test/not_enough_minerals_test.exs)
