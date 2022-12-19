@@ -20,3 +20,4 @@
 - [Proboscidea Volcanium](./test/proboscidea_volcanium_test.exs)
 - [Pyroclastic Flow](./test/pyroclastic_flow_test.exs) (Only part 1)
 - [Boiling Boulders](./test/boiling_boulders_test.exs)
+- [Not Enough Minerals](./test/not_enough_minerals_test.exs)

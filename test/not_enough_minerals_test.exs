@@ -46,6 +46,8 @@ defmodule NotEnoughMineralsTest do
       |> Enum.sum()
 
     assert quality_level == 33
+
+    assert find_best_geodes([{32, %Factory{}}], MapSet.new(), Enum.at(blueprints, 1), -1) == -1
   end
 
   test "puzzle solution" do
@@ -59,6 +61,16 @@ defmodule NotEnoughMineralsTest do
       |> Enum.sum()
 
     assert quality_level == 1266
+
+    result =
+      Enum.slice(blueprints, 0..2)
+      |> Enum.map(fn blueprint ->
+        IO.puts("blueprint #{blueprint.id}")
+        find_best_geodes([{32, %Factory{}}], MapSet.new(), blueprint, -1)
+      end)
+      |> Enum.reduce(&Kernel.*/2)
+
+    assert result == 5800
   end
 
   def find_best_geodes([], _, _, current_max) do
@@ -92,9 +104,14 @@ defmodule NotEnoughMineralsTest do
   end
 
   def build_factories(bp, current) do
-    build_geodes(bp, current) ++
-      build_obsidian(bp, current) ++
-      build_clay(bp, current) ++ build_ore(bp, current) ++ build_nothing(bp, current)
+    [
+      build_nothing(bp, current),
+      build_geodes(bp, current),
+      build_obsidian(bp, current),
+      build_clay(bp, current),
+      build_ore(bp, current)
+    ]
+    |> Enum.reduce(&Kernel.++/2)
   end
 
   def build_geodes(bp, current) do
