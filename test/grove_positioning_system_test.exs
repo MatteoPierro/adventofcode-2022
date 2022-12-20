@@ -1,6 +1,8 @@
 defmodule GrovePositioningSystemTest do
   use ExUnit.Case
 
+  @decryption_key 811589153
+
   test "decrypt" do
     arrangment = [1, 2, -3, 3, -2, 0, 4]
     decrypted = decrypt(arrangment)
@@ -12,16 +14,22 @@ defmodule GrovePositioningSystemTest do
     arrangment = [1, 2, -3, 3, -2, 0, 4]
 
     assert sum_of_grove_coordinates(arrangment) == 3
+
+    augmented_arrangment = Enum.map(arrangment,& &1 * @decryption_key)
+    assert sum_of_grove_coordinates(augmented_arrangment, 10) == 1623178306
   end
 
   test "puzzle solution" do
     arrangment = FileReader.read_all_lines("input_day20.txt") |> Enum.map(&String.to_integer/1)
 
     assert sum_of_grove_coordinates(arrangment) == 13522
+
+    augmented_arrangment = Enum.map(arrangment,& &1 * @decryption_key)
+    assert sum_of_grove_coordinates(augmented_arrangment, 10) == 17113168880158
   end
 
-  def sum_of_grove_coordinates(arrangment) do
-    decrypted = decrypt(arrangment)
+  def sum_of_grove_coordinates(arrangment, iterations \\ 1) do
+    decrypted = decrypt(arrangment, iterations)
 
     zero_index = Enum.find_index(decrypted, &(&1 == 0))
 
@@ -33,9 +41,17 @@ defmodule GrovePositioningSystemTest do
     |> Enum.sum()
   end
 
-  def decrypt(file) do
+  def decrypt(file, iterations \\ 1) do
     initial_file_index = 0..(length(file) - 1) |> Enum.to_list()
 
+    1..iterations
+    |> Enum.reduce(initial_file_index, fn _, file_index ->
+      do_decrypt(file, file_index)
+    end)
+    |> Enum.map(&Enum.at(file, &1))
+  end
+
+  def do_decrypt(file, initial_file_index) do
     file
     |> Enum.with_index()
     |> Enum.reduce(initial_file_index, fn {v, i}, file_index ->
@@ -51,6 +67,5 @@ defmodule GrovePositioningSystemTest do
         |> List.insert_at(k, x)
       end
     end)
-    |> Enum.map(&Enum.at(file, &1))
   end
 end

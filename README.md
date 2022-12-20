@@ -22,3 +22,4 @@
   - part 2 solved manually
 - [Boiling Boulders](./test/boiling_boulders_test.exs)
 - [Not Enough Minerals](./test/not_enough_minerals_test.exs)
+- [Grove Positioning System](./test/grove_positioning_system_test.exs)
