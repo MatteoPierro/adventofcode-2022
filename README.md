@@ -24,3 +24,5 @@
 - [Not Enough Minerals](./test/not_enough_minerals_test.exs)
 - [Grove Positioning System](./test/grove_positioning_system_test.exs)
 - [Monkey Math](./test/monkey_math_test.exs)
+- Monkey Map
+    - I did it together with my fiance in python, code available [here](https://bitbucket.org/gresalerno/aoc2022/src/master/Day22_Moneky_Map.py). Maybe I will do it in elixir as well when I have some spare time.
