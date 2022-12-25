@@ -28,3 +28,5 @@
     - I did it together with my fiance in python, code available [here](https://bitbucket.org/gresalerno/aoc2022/src/master/Day22_Moneky_Map.py). Maybe I will do it in elixir as well when I have some spare time.
 - Unstable Diffusion
     - I did it together with my fiance in python, code available [here](https://bitbucket.org/gresalerno/aoc2022/src/master/Day23_Unstable_Diffusion.py). Maybe I will do it in elixir as well when I have some spare time.
+- Blizzard Basin
+    - I did it together with my fiance in python, code available [here](https://bitbucket.org/gresalerno/aoc2022/src/master/Day24_Blizzard_Basin.py). Maybe I will do it in elixir as well when I have some spare time.
